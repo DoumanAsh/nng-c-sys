@@ -44,5 +44,8 @@ jobs:
         cargo --version
         rustc --version
 
+    - name: Test (no features)
+      run: cargo test
+
     - name: Test
-      run: cargo build
+      run: cargo test --features http
