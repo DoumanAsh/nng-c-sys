@@ -97,6 +97,10 @@ fn build() {
     config.define("NNG_TESTS", "OFF");
     config.define("NNG_ENABLE_COMPAT", "OFF");
     config.define("NNG_TRANSPORT_WS", "OFF");
+    //File descriptor is experimental transport so don't use it
+    //idk why it is ON by default
+    config.define("NNG_TRANSPORT_FDC", "OFF");
+
     #[cfg(not(feature = "http"))]
     config.define("NNG_ENABLE_HTTP", "OFF");
     #[cfg(feature = "http")]

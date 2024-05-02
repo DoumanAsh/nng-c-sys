@@ -10,10 +10,10 @@ fn should_verify_http_feature_enabled() {
     #[cfg(not(feature = "http"))]
     assert_eq!(result, nng_c_sys::nng_errno_enum::NNG_ENOTSUP);
     #[cfg(feature = "http")]
-    assert_eq!(result, 0);
-
-    #[cfg(feature = "http")]
-    unsafe {
-        nng_c_sys::nng_http_req_free(req);
+    {
+        assert_eq!(result, 0);
+        unsafe {
+            nng_c_sys::nng_http_req_free(req);
+        }
     }
 }
