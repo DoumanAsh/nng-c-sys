@@ -1,0 +1,85 @@
+= nng-wolfssl
+
+This package is meant for use as a plugin for
+http://github.com/nanomsg/nng[NNG], providing support for
+TLS v1.0 and newer via the https://wolfssl.com[wolfSSL] library.
+
+NOTE: This plugin is not sponsored or endorsed by the makers of wolfSSL.
+
+The main benefits of using wolfSSL over other alternatives lie in
+support for modern TLSv1.3 with commercial support, and an optional
+FIPS 140-2 compliant solution.
+
+== Configuration
+
+This plugin should already be a Git submodule within the
+NNG installation, at the right location.
+
+Download and install wolfSSL as per the instructions.
+This library will attempt to locate the installation in the
+usual places.  If a different value for `--prefix` was
+specified, then it may be necessary to supply that to
+CMake using `-DWOLFSSL_ROOT_DIR=_prefix_`.
+
+You can find open source for wolfSSL on
+https://github.com/wolfssl/wolfssl[GitHub].
+(Commercial users should use the version supplied by wolfSSL.)
+
+The default configuration of wolfSSL leaves out many useful
+features, such as CRLs, encrypted private key files, as well as
+older (but still widely used) versions of TLS and some algorithms.
+
+This plugin will attempt to discover what options are present, but
+some configuration choices will not function properly.
+We have tested with the option `--enable-all` and when in doubt, that
+is what we recommend configuring with.
+Some failures in the NNG test suite are expected when certain options
+are not present in the wolfSSL build.
+
+NOTE: NNG does not utilize any of the more dubious options in TLS,
+such renegotiation or SSL v3.0.
+
+== Limitations and Caveats
+
+* wolfSSL always supports the newest version(s) of TLS 1.3, without
+  any ability to disable such support.
+
+* PSK (pre-shared keys) cipher-suites are not supported.
+
+* Only TLS 1.0 and newer is supported, and only if configured
+  in the wolfSSL library itself.
+
+* Session resumption is not supported.
+
+* Session renegotiation is not supported.  (Removed in TLS v1.3.)
+
+* Compression is not supported.  (Removed in TLS v1.3.)
+
+* 0-RTT is not supported.
+
+* FIPS mode is not supported in the free version.
+
+== License
+
+This plugin is licensed under the GNU Public License (GPL)
+version 3.0.
+User's wishing to use this in settings incompatible with that
+license may purchase a commercial license from
+https://www.staysail.tech[Staysail Systems, Inc.]
+
+== Contributing
+
+We require all contributors to this project to sign a CLA.
+(This applies only to this project, and not to NNG as a whole.)
+The agreement ensures that any changes we make will still be available
+under GPL v3.0, while permitting us to license under proprietary terms
+for commercial users.
+
+== Contact
+
+Please contact the developers about any further questions
+with respect to this product at mailto:info@staysail.tech[].
+
+== Copyright
+
+Copyright 2020 Staysail Systems, Inc.
