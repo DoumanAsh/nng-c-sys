@@ -26,6 +26,30 @@ fn generate_lib() {
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+pub const NNG_OPT_SOCKNAME: &[u8] = b\"socket-name\";
+pub const NNG_OPT_RAW: &[u8] = b\"raw\";
+pub const NNG_OPT_PROTO: &[u8] = b\"protocol\";
+pub const NNG_OPT_PROTONAME: &[u8] = b\"protocol-name\";
+pub const NNG_OPT_PEER: &[u8] = b\"peer\";
+pub const NNG_OPT_PEERNAME: &[u8] = b\"peer-name\";
+pub const NNG_OPT_RECVBUF: &[u8] = b\"recv-buffer\";
+pub const NNG_OPT_SENDBUF: &[u8] = b\"send-buffer\";
+pub const NNG_OPT_RECVFD: &[u8] = b\"recv-fd\";
+pub const NNG_OPT_SENDFD: &[u8] = b\"send-fd\";
+pub const NNG_OPT_RECVTIMEO: &[u8] = b\"recv-timeout\";
+pub const NNG_OPT_SENDTIMEO: &[u8] = b\"send-timeout\";
+pub const NNG_OPT_LOCADDR: &[u8] = b\"local-address\";
+pub const NNG_OPT_REMADDR: &[u8] = b\"remote-address\";
+pub const NNG_OPT_URL: &[u8] = b\"url\";
+pub const NNG_OPT_MAXTTL: &[u8] = b\"ttl-max\";
+pub const NNG_OPT_RECVMAXSZ: &[u8] = b\"recv-size-max\";
+pub const NNG_OPT_RECONNMINT: &[u8] = b\"reconnect-time-min\";
+pub const NNG_OPT_RECONNMAXT: &[u8] = b\"reconnect-time-max\";
+pub const NNG_OPT_PEER_GID: &[u8] = b\"ipc:peer-gid\";
+pub const NNG_OPT_PEER_PID: &[u8] = b\"ipc:peer-pid\";
+pub const NNG_OPT_PEER_UID: &[u8] = b\"ipc:peer-uid\";
+pub const NNG_OPT_PEER_ZONEID: &[u8] = b\"ipc:peer-zoneid\";
+
 pub const NNG_OPT_SUB_SUBSCRIBE: &[u8] = b\"sub:subscribe\";
 pub const NNG_OPT_SUB_UNSUBSCRIBE: &[u8] = b\"sub:unsubscribe\";
 pub const NNG_OPT_SUB_PREFNEW: &[u8] = b\"sub:prefnew\";
