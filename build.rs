@@ -25,6 +25,20 @@ fn generate_lib() {
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
+
+pub const NNG_OPT_SUB_SUBSCRIBE: &[u8] = b\"sub:subscribe\";
+pub const NNG_OPT_SUB_UNSUBSCRIBE: &[u8] = b\"sub:unsubscribe\";
+pub const NNG_OPT_SUB_PREFNEW: &[u8] = b\"sub:prefnew\";
+
+pub const NNG_OPT_PAIR1_POLY: &[u8] = b\"pair1:polyamorous\";
+
+pub const NNG_OPT_REQ_RESENDTIME: &[u8] = b\"req:resend-time\";
+pub const NNG_OPT_REQ_RESENDTICK: &[u8] = b\"req:resend-tick\";
+
+pub const NNG_OPT_SURVEYOR_SURVEYTIME: &[u8] = b\"surveyor:survey-time\";
+
+pub const NNG_FLAG_ALLOC: core::ffi::c_int = 1;
+pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
 ";
 
     let out = PathBuf::new().join("src").join("lib.rs");
