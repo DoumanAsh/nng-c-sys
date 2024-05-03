@@ -6,40 +6,40 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-pub const NNG_OPT_SOCKNAME: &[u8] = b"socket-name";
-pub const NNG_OPT_RAW: &[u8] = b"raw";
-pub const NNG_OPT_PROTO: &[u8] = b"protocol";
-pub const NNG_OPT_PROTONAME: &[u8] = b"protocol-name";
-pub const NNG_OPT_PEER: &[u8] = b"peer";
-pub const NNG_OPT_PEERNAME: &[u8] = b"peer-name";
-pub const NNG_OPT_RECVBUF: &[u8] = b"recv-buffer";
-pub const NNG_OPT_SENDBUF: &[u8] = b"send-buffer";
-pub const NNG_OPT_RECVFD: &[u8] = b"recv-fd";
-pub const NNG_OPT_SENDFD: &[u8] = b"send-fd";
-pub const NNG_OPT_RECVTIMEO: &[u8] = b"recv-timeout";
-pub const NNG_OPT_SENDTIMEO: &[u8] = b"send-timeout";
-pub const NNG_OPT_LOCADDR: &[u8] = b"local-address";
-pub const NNG_OPT_REMADDR: &[u8] = b"remote-address";
-pub const NNG_OPT_URL: &[u8] = b"url";
-pub const NNG_OPT_MAXTTL: &[u8] = b"ttl-max";
-pub const NNG_OPT_RECVMAXSZ: &[u8] = b"recv-size-max";
-pub const NNG_OPT_RECONNMINT: &[u8] = b"reconnect-time-min";
-pub const NNG_OPT_RECONNMAXT: &[u8] = b"reconnect-time-max";
-pub const NNG_OPT_PEER_GID: &[u8] = b"ipc:peer-gid";
-pub const NNG_OPT_PEER_PID: &[u8] = b"ipc:peer-pid";
-pub const NNG_OPT_PEER_UID: &[u8] = b"ipc:peer-uid";
-pub const NNG_OPT_PEER_ZONEID: &[u8] = b"ipc:peer-zoneid";
+pub const NNG_OPT_SOCKNAME: &[u8] = b"socket-name\0";
+pub const NNG_OPT_RAW: &[u8] = b"raw\0";
+pub const NNG_OPT_PROTO: &[u8] = b"protocol\0";
+pub const NNG_OPT_PROTONAME: &[u8] = b"protocol-name\0";
+pub const NNG_OPT_PEER: &[u8] = b"peer\0";
+pub const NNG_OPT_PEERNAME: &[u8] = b"peer-name\0";
+pub const NNG_OPT_RECVBUF: &[u8] = b"recv-buffer\0";
+pub const NNG_OPT_SENDBUF: &[u8] = b"send-buffer\0";
+pub const NNG_OPT_RECVFD: &[u8] = b"recv-fd\0";
+pub const NNG_OPT_SENDFD: &[u8] = b"send-fd\0";
+pub const NNG_OPT_RECVTIMEO: &[u8] = b"recv-timeout\0";
+pub const NNG_OPT_SENDTIMEO: &[u8] = b"send-timeout\0";
+pub const NNG_OPT_LOCADDR: &[u8] = b"local-address\0";
+pub const NNG_OPT_REMADDR: &[u8] = b"remote-address\0";
+pub const NNG_OPT_URL: &[u8] = b"url\0";
+pub const NNG_OPT_MAXTTL: &[u8] = b"ttl-max\0";
+pub const NNG_OPT_RECVMAXSZ: &[u8] = b"recv-size-max\0";
+pub const NNG_OPT_RECONNMINT: &[u8] = b"reconnect-time-min\0";
+pub const NNG_OPT_RECONNMAXT: &[u8] = b"reconnect-time-max\0";
+pub const NNG_OPT_PEER_GID: &[u8] = b"ipc:peer-gid\0";
+pub const NNG_OPT_PEER_PID: &[u8] = b"ipc:peer-pid\0";
+pub const NNG_OPT_PEER_UID: &[u8] = b"ipc:peer-uid\0";
+pub const NNG_OPT_PEER_ZONEID: &[u8] = b"ipc:peer-zoneid\0";
 
-pub const NNG_OPT_SUB_SUBSCRIBE: &[u8] = b"sub:subscribe";
-pub const NNG_OPT_SUB_UNSUBSCRIBE: &[u8] = b"sub:unsubscribe";
-pub const NNG_OPT_SUB_PREFNEW: &[u8] = b"sub:prefnew";
+pub const NNG_OPT_SUB_SUBSCRIBE: &[u8] = b"sub:subscribe\0";
+pub const NNG_OPT_SUB_UNSUBSCRIBE: &[u8] = b"sub:unsubscribe\0";
+pub const NNG_OPT_SUB_PREFNEW: &[u8] = b"sub:prefnew\0";
 
-pub const NNG_OPT_PAIR1_POLY: &[u8] = b"pair1:polyamorous";
+pub const NNG_OPT_PAIR1_POLY: &[u8] = b"pair1:polyamorous\0";
 
-pub const NNG_OPT_REQ_RESENDTIME: &[u8] = b"req:resend-time";
-pub const NNG_OPT_REQ_RESENDTICK: &[u8] = b"req:resend-tick";
+pub const NNG_OPT_REQ_RESENDTIME: &[u8] = b"req:resend-time\0";
+pub const NNG_OPT_REQ_RESENDTICK: &[u8] = b"req:resend-tick\0";
 
-pub const NNG_OPT_SURVEYOR_SURVEYTIME: &[u8] = b"surveyor:survey-time";
+pub const NNG_OPT_SURVEYOR_SURVEYTIME: &[u8] = b"surveyor:survey-time\0";
 
 pub const NNG_FLAG_ALLOC: core::ffi::c_int = 1;
 pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
