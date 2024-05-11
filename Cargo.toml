@@ -22,3 +22,5 @@ version = "0.1"
 build-bindgen = ["bindgen"]
 # Enables HTTP transport code
 http = []
+# Enables TLS
+tls = []

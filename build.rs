@@ -92,6 +92,7 @@ pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
         "transport/tls/tls.h",
         "transport/ws/websocket.h",
         "supplemental/http/http.h",
+        "supplemental/tls/tls.h",
 
         //Utils
         "supplemental/util/platform.h",
@@ -143,6 +144,11 @@ fn build() {
     config.define("NNG_ENABLE_HTTP", "OFF");
     #[cfg(feature = "http")]
     config.define("NNG_ENABLE_HTTP", "ON");
+
+    #[cfg(not(feature = "tls"))]
+    config.define("NNG_TRANSPORT_TLS", "OFF");
+    #[cfg(feature = "tls")]
+    config.define("NNG_TRANSPORT_TLS", "ON");
 
     println!("cargo:rustc-link-lib=static=nng");
     let mut dest = config.build();

@@ -409,6 +409,24 @@ pub mod nng_http_status {
     pub const NNG_HTTP_STATUS_NOT_EXTENDED: Type = 510;
     pub const NNG_HTTP_STATUS_NETWORK_AUTH_REQUIRED: Type = 511;
 }
+pub mod nng_tls_mode {
+    pub type Type = core::ffi::c_int;
+    pub const NNG_TLS_MODE_CLIENT: Type = 0;
+    pub const NNG_TLS_MODE_SERVER: Type = 1;
+}
+pub mod nng_tls_auth_mode {
+    pub type Type = core::ffi::c_int;
+    pub const NNG_TLS_AUTH_MODE_NONE: Type = 0;
+    pub const NNG_TLS_AUTH_MODE_OPTIONAL: Type = 1;
+    pub const NNG_TLS_AUTH_MODE_REQUIRED: Type = 2;
+}
+pub mod nng_tls_version {
+    pub type Type = core::ffi::c_int;
+    pub const NNG_TLS_1_0: Type = 769;
+    pub const NNG_TLS_1_1: Type = 770;
+    pub const NNG_TLS_1_2: Type = 771;
+    pub const NNG_TLS_1_3: Type = 772;
+}
 extern "C" {
     pub fn nng_fini();
     pub fn nng_close(arg1: nng_socket) -> core::ffi::c_int;
@@ -2019,6 +2037,57 @@ extern "C" {
         arg3: *mut nng_http_res,
         arg4: *mut nng_aio,
     );
+    pub fn nng_tls_config_alloc(
+        arg1: *mut *mut nng_tls_config,
+        arg2: nng_tls_mode::Type,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_config_hold(arg1: *mut nng_tls_config);
+    pub fn nng_tls_config_free(arg1: *mut nng_tls_config);
+    pub fn nng_tls_config_server_name(
+        arg1: *mut nng_tls_config,
+        arg2: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_config_ca_chain(
+        arg1: *mut nng_tls_config,
+        arg2: *const core::ffi::c_char,
+        arg3: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_config_own_cert(
+        arg1: *mut nng_tls_config,
+        arg2: *const core::ffi::c_char,
+        arg3: *const core::ffi::c_char,
+        arg4: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_config_key(
+        arg1: *mut nng_tls_config,
+        arg2: *const u8,
+        arg3: usize,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_config_pass(
+        arg1: *mut nng_tls_config,
+        arg2: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_config_auth_mode(
+        arg1: *mut nng_tls_config,
+        arg2: nng_tls_auth_mode::Type,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_config_ca_file(
+        arg1: *mut nng_tls_config,
+        arg2: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_config_cert_key_file(
+        arg1: *mut nng_tls_config,
+        arg2: *const core::ffi::c_char,
+        arg3: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_config_version(
+        arg1: *mut nng_tls_config,
+        arg2: nng_tls_version::Type,
+        arg3: nng_tls_version::Type,
+    ) -> core::ffi::c_int;
+    pub fn nng_tls_engine_name() -> *const core::ffi::c_char;
+    pub fn nng_tls_engine_description() -> *const core::ffi::c_char;
+    pub fn nng_tls_engine_fips_mode() -> bool;
     pub fn nng_clock() -> nng_time;
     pub fn nng_msleep(arg1: nng_duration);
     pub fn nng_thread_create(
