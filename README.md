@@ -7,3 +7,14 @@
 Bindings to [nng](https://github.com/nanomsg/nng).
 
 Version corresponds to C library
+
+## Features
+
+- `http` - Builds with http code ON
+- `tls` - Builds with TLS code ON
+
+### TLS
+
+When `tls` feature is enabled `nng` will try to look for mbedTLS installation in `/usr/local`
+
+If regular installation is not an option, you can specify environment variable `NNG_MBEDTLS_ROOT_DIR` with path to the library.

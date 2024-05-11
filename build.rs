@@ -1,3 +1,6 @@
+use std::env;
+use std::process::Command;
+
 const INCLUDE_PATH: &str = "nng/include";
 
 #[cfg(feature = "build-bindgen")]
@@ -129,10 +132,22 @@ fn generate_lib() {
 }
 
 fn build() {
+    const MBEDTLS_ROOT_DIR: &str = "NNG_MBEDTLS_ROOT_DIR";
     let abs_include = std::fs::canonicalize(INCLUDE_PATH).expect("To get absolute path to brotlie include");
     println!("cargo:include={}", abs_include.display());
+    println!("cargo:rerun-if-env-changed=${MBEDTLS_ROOT_DIR}");
 
     let mut config = cmake::Config::new("nng");
+
+    //Use ninja if present on system
+    if Command::new("ninja").arg("--version").status().map(|status| status.success()).unwrap_or(false) {
+        config.generator("Ninja");
+    }
+
+    if let Ok(path) = env::var(MBEDTLS_ROOT_DIR) {
+        config.define("MBEDTLS_ROOT_DIR", path);
+    }
+
     config.define("NNG_TESTS", "OFF");
     config.define("NNG_ENABLE_COMPAT", "OFF");
     config.define("NNG_TRANSPORT_WS", "OFF");
