@@ -160,10 +160,14 @@ fn build() {
     #[cfg(feature = "http")]
     config.define("NNG_ENABLE_HTTP", "ON");
 
-    #[cfg(not(feature = "tls"))]
-    config.define("NNG_TRANSPORT_TLS", "OFF");
-    #[cfg(feature = "tls")]
-    config.define("NNG_TRANSPORT_TLS", "ON");
+    #[cfg(not(feature = "tls"))] {
+        config.define("NNG_TRANSPORT_TLS", "OFF");
+        config.define("NNG_ENABLE_TLS", "OFF");
+    }
+    #[cfg(feature = "tls")] {
+        config.define("NNG_TRANSPORT_TLS", "ON");
+        config.define("NNG_ENABLE_TLS", "ON");
+    }
 
     println!("cargo:rustc-link-lib=static=nng");
     let mut dest = config.build();
