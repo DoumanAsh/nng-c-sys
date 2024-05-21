@@ -1,4 +1,3 @@
-use std::env;
 use std::process::Command;
 
 const INCLUDE_PATH: &str = "nng/include";
@@ -142,10 +141,6 @@ fn build() {
     //Use ninja if present on system
     if Command::new("ninja").arg("--version").status().map(|status| status.success()).unwrap_or(false) {
         config.generator("Ninja");
-    }
-
-    if let Ok(path) = env::var(MBEDTLS_ROOT_DIR) {
-        config.define("MBEDTLS_ROOT_DIR", path);
     }
 
     config.define("NNG_TESTS", "OFF");

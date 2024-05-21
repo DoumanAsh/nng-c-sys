@@ -17,6 +17,6 @@ Version corresponds to C library
 
 When `tls` feature is enabled `nng` will try to look for mbedTLS installation in `/usr/local`
 
-If regular installation is not an option, you can specify environment variable `NNG_MBEDTLS_ROOT_DIR` with path to the library.
+If regular installation is not an option, you can specify environment variable `MBEDTLS_ROOT` with path to the library.
 
 Which means on windows you're always required to supply this variable
