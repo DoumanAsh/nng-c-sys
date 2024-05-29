@@ -1,3 +1,5 @@
+use std::env;
+use std::path::PathBuf;
 use std::process::Command;
 
 const INCLUDE_PATH: &str = "nng/include";
@@ -127,10 +129,53 @@ pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
 #[cfg(not(feature = "build-bindgen"))]
 fn generate_lib() {}
 
+fn get_android_vars() -> Option<(PathBuf, &'static str)> {
+    if let Ok(android_ndk) = env::var("ANDROID_NDK_HOME") {
+        let mut toolchain_file = PathBuf::new();
+        toolchain_file.push(android_ndk);
+        toolchain_file.push("build");
+        toolchain_file.push("cmake");
+        toolchain_file.push("android.toolchain.cmake");
+
+        let target = env::var("TARGET").unwrap();
+        let abi = match target.as_str() {
+            "armv7-linux-androideabi" => "armeabi-v7a",
+            "aarch64-linux-android" => "arm64-v8a",
+            "i686-linux-android" => "x86",
+            "x86_64-linux-android" => "x86_64",
+            _ => return None,
+        };
+
+        Some((toolchain_file, abi))
+    } else {
+        None
+    }
+}
+
+fn set_cmake_define_if_present(config: &mut cmake::Config, name: &str) {
+    if let Ok(value) = env::var(name) {
+        config.define(name, value);
+    } else if let Ok(value) = env::var(format!("CARGO_NDK_{}", name)) {
+        config.define(name, value);
+    } else {
+        println!("cargo:warning=Unable to find Android env variable '{}'. Hope for good default...", name);
+    }
+}
+
 #[cfg(feature = "tls")]
 fn build_mbedtls(nng: &mut cmake::Config, is_ninja: bool) {
     const MBEDTLS: &str = "mbedtls-2.28.8";
     let mut config = cmake::Config::new(MBEDTLS);
+
+    if let Some((toolchain_file, abi)) = get_android_vars() {
+        config.define("CMAKE_TOOLCHAIN_FILE", toolchain_file);
+        config.define("ANDROID_ABI", abi);
+
+        set_cmake_define_if_present(&mut config, "ANDROID_PLATFORM");
+        set_cmake_define_if_present(&mut config, "ANDROID_STL");
+        set_cmake_define_if_present(&mut config, "ANDROID_ARM_MODE");
+        set_cmake_define_if_present(&mut config, "ANDROID_ARM_NEON");
+    }
 
     if is_ninja {
         config.generator("Ninja");
@@ -161,6 +206,16 @@ fn build() {
 
     let mut config = cmake::Config::new("nng");
 
+    if let Some((toolchain_file, abi)) = get_android_vars() {
+        config.define("CMAKE_TOOLCHAIN_FILE", toolchain_file);
+        config.define("ANDROID_ABI", abi);
+
+        set_cmake_define_if_present(&mut config, "ANDROID_PLATFORM");
+        set_cmake_define_if_present(&mut config, "ANDROID_STL");
+        set_cmake_define_if_present(&mut config, "ANDROID_ARM_MODE");
+        set_cmake_define_if_present(&mut config, "ANDROID_ARM_NEON");
+    }
+
     //Use ninja if present on system
     if is_ninja {
         config.generator("Ninja");
@@ -168,15 +223,32 @@ fn build() {
 
     config.define("NNG_TESTS", "OFF");
     config.define("NNG_ENABLE_COMPAT", "OFF");
-    config.define("NNG_TRANSPORT_WS", "OFF");
     //File descriptor is experimental transport so don't use it
     //idk why it is ON by default
     config.define("NNG_TRANSPORT_FDC", "OFF");
+
+    #[cfg(not(feature = "stats"))]
+    config.define("NNG_ENABLE_STATS", "OFF");
+    #[cfg(feature = "stats")]
+    config.define("NNG_ENABLE_STATS", "ON");
 
     #[cfg(not(feature = "http"))]
     config.define("NNG_ENABLE_HTTP", "OFF");
     #[cfg(feature = "http")]
     config.define("NNG_ENABLE_HTTP", "ON");
+
+    #[cfg(not(feature = "websocket"))]
+    {
+        config.define("NNG_TRANSPORT_WS", "OFF");
+        config.define("NNG_TRANSPORT_WSS", "OFF");
+    }
+
+    #[cfg(feature = "websocket")]
+    {
+        config.define("NNG_TRANSPORT_WS", "ON");
+        #[cfg(feature = "tls")]
+        config.define("NNG_TRANSPORT_WSS", "ON");
+    }
 
     #[cfg(not(feature = "tls"))]
     {

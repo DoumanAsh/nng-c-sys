@@ -1,6 +1,6 @@
 [package]
 name = "nng-c-sys"
-version = "1.8.0-beta.5"
+version = "1.8.0-beta.6"
 authors = ["Douman <douman@gmx.se>"]
 edition = "2018"
 keywords = ["nng", "nanomsg"]
@@ -22,5 +22,9 @@ version = "0.1"
 build-bindgen = ["bindgen"]
 # Enables HTTP transport code
 http = []
+# Enables Websocket transport code (this automatically enables http transport)
+websocket = ["http"]
 # Enables TLS
 tls = []
+# Enables statistics
+stats = []
