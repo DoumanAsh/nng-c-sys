@@ -16,7 +16,6 @@ fn generate_lib() {
             } else {
                 None
             }
-
         }
     }
 
@@ -73,7 +72,6 @@ pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
     let paths = [
         //main header
         "nng.h",
-
         //protocols
         "protocol/bus0/bus.h",
         "protocol/pair0/pair.h",
@@ -86,7 +84,6 @@ pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
         "protocol/reqrep0/req.h",
         "protocol/survey0/respond.h",
         "protocol/survey0/survey.h",
-
         //transports
         "transport/inproc/inproc.h",
         "transport/ipc/ipc.h",
@@ -95,10 +92,8 @@ pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
         "transport/ws/websocket.h",
         "supplemental/http/http.h",
         "supplemental/tls/tls.h",
-
         //Utils
         "supplemental/util/platform.h",
-
         //Experimental features
         //"nng/transport/zerotier/zerotier.h",
     ];
@@ -107,39 +102,67 @@ pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
         builder = builder.header(format!("{INCLUDE_PATH}/nng/{path}"));
     }
 
-    let bindings = builder.raw_line(PREPEND_LIB)
-                          .ctypes_prefix("core::ffi")
-                          .use_core()
-                          .generate_comments(false)
-                          .layout_tests(false)
-                          .size_t_is_usize(true)
-                          .sort_semantically(true)
-                          .merge_extern_blocks(true)
-                          .default_enum_style(bindgen::EnumVariation::ModuleConsts)
-                          .allowlist_type("nng.+")
-                          .allowlist_function("nng.+")
-                          .clang_arg(format!("-I{INCLUDE_PATH}"))
-                          .parse_callbacks(Box::new(ParseCallbacks))
-                          .generate()
-                          .expect("Unable to generate bindings");
+    let bindings = builder
+        .raw_line(PREPEND_LIB)
+        .ctypes_prefix("core::ffi")
+        .use_core()
+        .generate_comments(false)
+        .layout_tests(false)
+        .size_t_is_usize(true)
+        .sort_semantically(true)
+        .merge_extern_blocks(true)
+        .default_enum_style(bindgen::EnumVariation::ModuleConsts)
+        .allowlist_type("nng.+")
+        .allowlist_function("nng.+")
+        .clang_arg(format!("-I{INCLUDE_PATH}"))
+        .parse_callbacks(Box::new(ParseCallbacks))
+        .generate()
+        .expect("Unable to generate bindings");
 
-    bindings.write_to_file(out).expect("Couldn't write bindings!");
+    bindings
+        .write_to_file(out)
+        .expect("Couldn't write bindings!");
 }
 
 #[cfg(not(feature = "build-bindgen"))]
-fn generate_lib() {
+fn generate_lib() {}
+
+#[cfg(feature = "tls")]
+fn build_mbedtls(nng: &mut cmake::Config, is_ninja: bool) {
+    const MBEDTLS: &str = "mbedtls-2.28.8";
+    let mut config = cmake::Config::new(MBEDTLS);
+
+    if is_ninja {
+        config.generator("Ninja");
+    }
+    config.define("ENABLE_PROGRAMS", "OFF");
+    config.define("ENABLE_TESTING", "OFF");
+
+    let mut dest = config.build();
+
+    nng.define("MBEDTLS_ROOT_DIR", &dest);
+
+    dest.push("lib");
+    println!("cargo:rustc-link-lib=static=mbedcrypto");
+    println!("cargo:rustc-link-lib=static=mbedtls");
+    println!("cargo:rustc-link-lib=static=mbedx509");
+    println!("cargo:rustc-link-search=native={}", dest.display());
 }
 
 fn build() {
-    const MBEDTLS_ROOT_DIR: &str = "NNG_MBEDTLS_ROOT_DIR";
-    let abs_include = std::fs::canonicalize(INCLUDE_PATH).expect("To get absolute path to brotlie include");
+    let abs_include =
+        std::fs::canonicalize(INCLUDE_PATH).expect("To get absolute path to brotlie include");
+    let is_ninja = Command::new("ninja")
+        .arg("--version")
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false);
     println!("cargo:include={}", abs_include.display());
-    println!("cargo:rerun-if-env-changed=${MBEDTLS_ROOT_DIR}");
 
     let mut config = cmake::Config::new("nng");
 
     //Use ninja if present on system
-    if Command::new("ninja").arg("--version").status().map(|status| status.success()).unwrap_or(false) {
+    if is_ninja {
         config.generator("Ninja");
     }
 
@@ -155,11 +178,15 @@ fn build() {
     #[cfg(feature = "http")]
     config.define("NNG_ENABLE_HTTP", "ON");
 
-    #[cfg(not(feature = "tls"))] {
+    #[cfg(not(feature = "tls"))]
+    {
         config.define("NNG_TRANSPORT_TLS", "OFF");
         config.define("NNG_ENABLE_TLS", "OFF");
     }
-    #[cfg(feature = "tls")] {
+    #[cfg(feature = "tls")]
+    {
+        build_mbedtls(&mut config, is_ninja);
+
         config.define("NNG_TRANSPORT_TLS", "ON");
         config.define("NNG_ENABLE_TLS", "ON");
     }
