@@ -64,6 +64,15 @@ pub const NNG_OPT_REQ_RESENDTICK: &[u8] = b\"req:resend-tick\0\";
 
 pub const NNG_OPT_SURVEYOR_SURVEYTIME: &[u8] = b\"surveyor:survey-time\0\";
 
+pub const NNG_OPT_TLS_AUTH_MODE: &[u8] = b\"tls-authmode\0\";
+pub const NNG_OPT_TLS_CA_FILE: &[u8] = b\"tls-ca-file\0\";
+pub const NNG_OPT_TLS_CERT_KEY_FILE: &[u8] = b\"tls-cert-key-file\0\";
+pub const NNG_OPT_TLS_CONFIG: &[u8] = b\"tls-config\0\";
+pub const NNG_OPT_TLS_SERVER_NAME: &[u8] = b\"tls-server-name\0\";
+pub const NNG_OPT_TLS_VERIFIED: &[u8] = b\"tls-verified\0\";
+pub const NNG_OPT_TLS_PEER_CN: &[u8] = b\"tls-peer-cn\0\";
+pub const NNG_OPT_TLS_PEER_ALT_NAMES: &[u8] = b\"tls-peer-alt-names\0\";
+
 pub const NNG_FLAG_ALLOC: core::ffi::c_int = 1;
 pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
 ";
