@@ -12,6 +12,7 @@
 #include "core/pipe.h"
 #include "list.h"
 #include "nng/nng.h"
+#include "nng/supplemental/tls/tls.h"
 #include "sockimpl.h"
 
 #include <stdio.h>
@@ -83,7 +84,6 @@ struct nni_socket {
 
 	bool s_closing; // Socket is closing
 	bool s_closed;  // Socket closed, protected by global lock
-	bool s_ctxwait; // Waiting for contexts to close.
 
 	nni_mtx          s_pipe_cbs_mtx;
 	nni_sock_pipe_cb s_pipe_cbs[NNG_PIPE_EV_NUM];
@@ -338,6 +338,10 @@ static const nni_option sock_options[] = {
 static void
 nni_free_opt(nni_sockopt *opt)
 {
+	if ((strcmp(opt->name, NNG_OPT_TLS_CONFIG) == 0) &&
+	    (opt->sz == sizeof(nng_tls_config *))) {
+		nng_tls_config_free(*(nng_tls_config **) (opt->data));
+	}
 	nni_strfree(opt->name);
 	nni_free(opt->data, opt->sz);
 	NNI_FREE_STRUCT(opt);
@@ -734,7 +738,6 @@ nni_sock_shutdown(nni_sock *sock)
 	// a chance to do so gracefully.
 
 	while (!nni_list_empty(&sock->s_ctxs)) {
-		sock->s_ctxwait = true;
 		nni_cv_wait(&sock->s_close_cv);
 	}
 	nni_mtx_unlock(&sock_lk);
@@ -798,7 +801,6 @@ nni_sock_close(nni_sock *s)
 
 	// Wait for all other references to drop.  Note that we
 	// have a reference already (from our caller).
-	s->s_ctxwait = true;
 	while ((s->s_ref > 1) || (!nni_list_empty(&s->s_ctxs))) {
 		nni_cv_wait(&s->s_close_cv);
 	}
@@ -1048,9 +1050,13 @@ nni_sock_setopt(
 		// TLS options may not be supported if TLS is not
 		// compiled in.  Supporting all these is deprecated.
 	} else if (strcmp(name, NNG_OPT_TLS_CONFIG) == 0) {
-		if ((rv = nni_copyin_ptr(NULL, v, sz, t)) != 0) {
+		nng_tls_config *tc;
+		if ((rv = nni_copyin_ptr((void **) &tc, v, sz, t)) != 0) {
 			return (rv);
 		}
+		// place a hold on this configuration object
+		nng_tls_config_hold(tc);
+
 	} else if ((strcmp(name, NNG_OPT_TLS_SERVER_NAME) == 0) ||
 	    (strcmp(name, NNG_OPT_TLS_CA_FILE) == 0) ||
 	    (strcmp(name, NNG_OPT_TLS_CERT_KEY_FILE) == 0)) {
@@ -1307,9 +1313,7 @@ nni_ctx_rele(nni_ctx *ctx)
 	// tries to avoid ID reuse.
 	nni_id_remove(&ctx_ids, ctx->c_id);
 	nni_list_remove(&sock->s_ctxs, ctx);
-	if (sock->s_closed || sock->s_ctxwait) {
-		nni_cv_wake(&sock->s_close_cv);
-	}
+	nni_cv_wake(&sock->s_close_cv);
 	nni_mtx_unlock(&sock_lk);
 
 	nni_ctx_destroy(ctx);
@@ -1791,9 +1795,7 @@ nni_pipe_remove(nni_pipe *p)
 		d->d_pipe = NULL;
 		dialer_timer_start_locked(d); // Kick the timer to redial.
 	}
-	if (s->s_closing) {
-		nni_cv_wake(&s->s_cv);
-	}
+	nni_cv_wake(&s->s_cv);
 	nni_mtx_unlock(&s->s_mx);
 }
 

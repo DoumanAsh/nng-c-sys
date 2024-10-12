@@ -25,7 +25,7 @@
 #   IN THE SOFTWARE.
 #
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.15)
 
 project(nng C)
 include(CheckCCompilerFlag)
@@ -293,7 +293,8 @@ endif ()
 
 #  Build the tools
 
-add_subdirectory(docs/man)
+# Modified by ngg-c-sys because docs are not needed
+#add_subdirectory(docs/man)
 
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_VERSION ${NNG_PACKAGE_VERSION})

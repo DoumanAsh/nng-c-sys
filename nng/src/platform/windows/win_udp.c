@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Staysail Systems, Inc. <info@staysail.tech>
+// Copyright 2024 Staysail Systems, Inc. <info@staysail.tech>
 // Copyright 2018 Capitar IT Group BV <info@capitar.com>
 //
 // This software is supplied under the terms of the MIT License, a
@@ -38,7 +38,7 @@ static void udp_recv_start(nni_plat_udp *);
 int
 nni_plat_udp_open(nni_plat_udp **udpp, nni_sockaddr *sa)
 {
-	nni_plat_udp *   u;
+	nni_plat_udp    *u;
 	SOCKADDR_STORAGE ss;
 	int              sslen;
 	DWORD            no;
@@ -67,8 +67,9 @@ nni_plat_udp_open(nni_plat_udp **udpp, nni_sockaddr *sa)
 	(void) setsockopt(
 	    u->s, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &no, sizeof(no));
 
-	if (((rv = nni_win_io_init(&u->rxio, udp_recv_cb, u)) != 0) ||
-	    ((rv = nni_win_io_register((HANDLE) u->s)) != 0)) {
+	nni_win_io_init(&u->rxio, udp_recv_cb, u);
+
+	if ((rv = nni_win_io_register((HANDLE) u->s)) != 0) {
 		nni_plat_udp_close(u);
 		return (rv);
 	}
@@ -102,7 +103,6 @@ nni_plat_udp_close(nni_plat_udp *u)
 		closesocket(u->s);
 	}
 
-	nni_win_io_fini(&u->rxio);
 	nni_mtx_fini(&u->lk);
 	nni_cv_fini(&u->cv);
 	NNI_FREE_STRUCT(u);
@@ -115,10 +115,10 @@ nni_plat_udp_send(nni_plat_udp *u, nni_aio *aio)
 {
 	SOCKADDR_STORAGE to;
 	int              tolen;
-	nng_sockaddr *   sa;
+	nng_sockaddr    *sa;
 	unsigned         naiov;
-	nni_iov *        aiov;
-	WSABUF *         iov;
+	nni_iov         *aiov;
+	WSABUF          *iov;
 	int              rv;
 	DWORD            nsent;
 
@@ -191,7 +191,7 @@ udp_recv_cb(nni_win_io *io, int rv, size_t num)
 {
 	nni_plat_udp *u = io->ptr;
 	nni_sockaddr *sa;
-	nni_aio *     aio;
+	nni_aio      *aio;
 
 	nni_mtx_lock(&u->lk);
 	if ((aio = nni_list_first(&u->rxq)) == NULL) {
@@ -226,7 +226,7 @@ udp_recv_start(nni_plat_udp *u)
 	DWORD    flags;
 	nni_iov *aiov;
 	unsigned naiov;
-	WSABUF * iov;
+	WSABUF  *iov;
 	nni_aio *aio;
 
 	if ((u->s == INVALID_SOCKET) || (u->closed)) {
@@ -313,6 +313,101 @@ nni_plat_udp_sockname(nni_plat_udp *udp, nni_sockaddr *sa)
 		return (nni_win_error(GetLastError()));
 	}
 	return (nni_win_sockaddr2nn(sa, &ss));
+}
+
+// Joining a multicast group is different than binding to a multicast
+// group.  This allows to receive both unicast and multicast at the given
+// address.
+static int
+ip4_multicast_member(nni_plat_udp *udp, SOCKADDR *sa, bool join)
+{
+	IP_MREQ          mreq;
+	SOCKADDR_IN     *sin;
+	SOCKADDR_STORAGE local;
+	int              sz = sizeof(local);
+
+	if (getsockname(udp->s, (SOCKADDR *) &local, &sz) >= 0) {
+		if (local.ss_family != AF_INET) {
+			// address families have to match
+			return (NNG_EADDRINVAL);
+		}
+		sin                       = (SOCKADDR_IN *) &local;
+		mreq.imr_interface.s_addr = sin->sin_addr.s_addr;
+	} else {
+		mreq.imr_interface.s_addr = INADDR_ANY;
+	}
+
+	// Determine our local interface
+	sin = (SOCKADDR_IN *) sa;
+
+	mreq.imr_multiaddr.s_addr = sin->sin_addr.s_addr;
+	if (setsockopt(udp->s, IPPROTO_IP,
+	        join ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP,
+	        (const char *) &mreq, sizeof(mreq)) == 0) {
+		return (0);
+	}
+	return (nni_win_error(GetLastError()));
+}
+
+#ifdef NNG_ENABLE_IPV6
+static int
+ip6_multicast_member(nni_plat_udp *udp, SOCKADDR *sa, bool join)
+{
+	IPV6_MREQ        mreq;
+	SOCKADDR_IN6    *sin6;
+	SOCKADDR_STORAGE local;
+	int              sz = sizeof(local);
+
+	if (getsockname(udp->s, (SOCKADDR *) &local, &sz) >= 0) {
+		if (local.ss_family != AF_INET6) {
+			// address families have to match
+			return (NNG_EADDRINVAL);
+		}
+		sin6                  = (SOCKADDR_IN6 *) &local;
+		mreq.ipv6mr_interface = sin6->sin6_scope_id;
+	} else {
+		mreq.ipv6mr_interface = 0;
+	}
+
+	// Determine our local interface
+	sin6 = (SOCKADDR_IN6 *) sa;
+
+	mreq.ipv6mr_multiaddr = sin6->sin6_addr;
+	if (setsockopt(udp->s, IPPROTO_IPV6,
+	        join ? IPV6_JOIN_GROUP : IPV6_LEAVE_GROUP,
+	        (const char *) &mreq, sizeof(mreq)) == 0) {
+		return (0);
+	}
+	return (nni_win_error(GetLastError()));
+}
+#endif
+
+int
+nni_plat_udp_multicast_membership(
+    nni_plat_udp *udp, nni_sockaddr *sa, bool join)
+{
+	SOCKADDR_STORAGE ss;
+	socklen_t        sz;
+	int              rv;
+
+	sz = nni_win_nn2sockaddr(&ss, sa);
+	if (sz < 1) {
+		return (NNG_EADDRINVAL);
+	}
+	switch (ss.ss_family) {
+	case AF_INET:
+		rv = ip4_multicast_member(udp, (struct sockaddr *) &ss, join);
+		break;
+#ifdef NNG_ENABLE_IPV6
+	case AF_INET6:
+		rv = ip6_multicast_member(udp, (struct sockaddr *) &ss, join);
+		break;
+#endif
+	default:
+		rv = NNG_EADDRINVAL;
+	}
+
+	return (rv);
 }
 
 int

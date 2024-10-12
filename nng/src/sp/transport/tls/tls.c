@@ -153,10 +153,10 @@ tlstran_pipe_fini(void *arg)
 		}
 		nni_mtx_unlock(&ep->mtx);
 	}
+	nng_stream_free(p->tls);
 	nni_aio_free(p->rxaio);
 	nni_aio_free(p->txaio);
 	nni_aio_free(p->negoaio);
-	nng_stream_free(p->tls);
 	nni_msg_free(p->rxmsg);
 	NNI_FREE_STRUCT(p);
 }
@@ -285,6 +285,7 @@ error:
 	if (rv == NNG_ECLOSED) {
 		rv = NNG_ECONNSHUT;
 	}
+	nni_list_remove(&ep->negopipes, p);
 	nng_stream_close(p->tls);
 
 	if ((uaio = ep->useraio) != NULL) {

@@ -1,5 +1,5 @@
 //
-// Copyright 2021 Staysail Systems, Inc. <info@staysail.tech>
+// Copyright 2024 Staysail Systems, Inc. <info@staysail.tech>
 // Copyright 2018 Capitar IT Group BV <info@capitar.com>
 // Copyright 2019 Devolutions <info@devolutions.net>
 //
@@ -17,7 +17,7 @@
 
 typedef struct {
 	nng_stream_listener sl;
-	char *              path;
+	char               *path;
 	bool                started;
 	bool                closed;
 	HANDLE              f;
@@ -33,7 +33,7 @@ typedef struct {
 static void
 ipc_accept_done(ipc_listener *l, int rv)
 {
-	nni_aio *   aio;
+	nni_aio    *aio;
 	HANDLE      f;
 	nng_stream *c;
 
@@ -42,6 +42,9 @@ ipc_accept_done(ipc_listener *l, int rv)
 	nni_cv_wake(&l->cv);
 
 	if (l->closed) {
+		rv = NNG_ECLOSED;
+	}
+	if (rv != 0) {
 		// Closed, so bail.
 		DisconnectNamedPipe(l->f);
 		nni_aio_finish_error(aio, NNG_ECLOSED);
@@ -83,32 +86,26 @@ ipc_accept_start(ipc_listener *l)
 {
 	nni_aio *aio;
 
-	if (l->closed) {
-		while ((aio = nni_list_first(&l->aios)) != NULL) {
-			nni_list_remove(&l->aios, aio);
-			nni_aio_finish_error(aio, NNG_ECLOSED);
-		}
-		nni_cv_wake(&l->cv);
-	}
-
 	while ((aio = nni_list_first(&l->aios)) != NULL) {
 		int rv;
 
-		if ((ConnectNamedPipe(l->f, &l->io.olpd)) ||
-		    ((rv = GetLastError()) == ERROR_IO_PENDING)) {
-			// Success, or pending, handled via completion pkt.
+		if (l->closed) {
+			nni_aio_list_remove(aio);
+			nni_aio_finish_error(aio, NNG_ECLOSED);
+            rv = NNG_ECLOSED;
+		} else if (ConnectNamedPipe(l->f, &l->io.olpd)) {
+			rv = 0;
+		} else if ((rv = GetLastError()) == ERROR_IO_PENDING) {
+			// asynchronous completion pending
 			return;
+		} else if (rv == ERROR_PIPE_CONNECTED) {
+			rv = 0;
 		}
-		if (rv == ERROR_PIPE_CONNECTED) {
-			// Kind of like success, but as this is technically
-			// an "error", we have to complete it ourself.
-			// Fake a completion.
-			ipc_accept_done(l, 0);
-		} else {
-			// Fast-fail (synchronous).
-			nni_aio_finish_error(aio, nni_win_error(rv));
-		}
+		// synchronous completion
+		ipc_accept_done(l, rv);
 	}
+
+	nni_cv_wake(&l->cv);
 }
 
 static void
@@ -138,7 +135,7 @@ static int
 ipc_listener_set_sec_desc(void *arg, const void *buf, size_t sz, nni_type t)
 {
 	ipc_listener *l = arg;
-	void *        desc;
+	void         *desc;
 	int           rv;
 
 	if ((rv = nni_copyin_ptr(&desc, buf, sz, t)) != 0) {
@@ -200,7 +197,7 @@ ipc_listener_listen(void *arg)
 	ipc_listener *l = arg;
 	int           rv;
 	HANDLE        f;
-	char *        path;
+	char         *path;
 
 	nni_mtx_lock(&l->mtx);
 	if (l->started) {
@@ -310,7 +307,6 @@ ipc_listener_free(void *arg)
 		nni_cv_wait(&l->cv);
 	}
 	nni_mtx_unlock(&l->mtx);
-	nni_win_io_fini(&l->io);
 	nni_strfree(l->path);
 	nni_cv_fini(&l->cv);
 	nni_mtx_fini(&l->mtx);
@@ -321,7 +317,6 @@ int
 nni_ipc_listener_alloc(nng_stream_listener **lp, const nng_url *url)
 {
 	ipc_listener *l;
-	int           rv;
 
 	if ((strcmp(url->u_scheme, "ipc") != 0) || (url->u_path == NULL) ||
 	    (strlen(url->u_path) == 0) ||
@@ -331,10 +326,7 @@ nni_ipc_listener_alloc(nng_stream_listener **lp, const nng_url *url)
 	if ((l = NNI_ALLOC_STRUCT(l)) == NULL) {
 		return (NNG_ENOMEM);
 	}
-	if ((rv = nni_win_io_init(&l->io, ipc_accept_cb, l)) != 0) {
-		NNI_FREE_STRUCT(l);
-		return (rv);
-	}
+	nni_win_io_init(&l->io, ipc_accept_cb, l);
 	l->started                       = false;
 	l->closed                        = false;
 	l->sec_attr.nLength              = sizeof(l->sec_attr);
