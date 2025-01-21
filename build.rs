@@ -192,15 +192,17 @@ fn build_mbedtls(nng: &mut cmake::Config, is_ninja: bool) {
     config.define("ENABLE_PROGRAMS", "OFF");
     config.define("ENABLE_TESTING", "OFF");
 
-    let mut dest = config.build();
+    let dest = config.build();
 
     nng.define("MBEDTLS_ROOT_DIR", &dest);
 
-    dest.push("lib");
     println!("cargo:rustc-link-lib=static=mbedcrypto");
     println!("cargo:rustc-link-lib=static=mbedtls");
     println!("cargo:rustc-link-lib=static=mbedx509");
-    println!("cargo:rustc-link-search=native={}", dest.display());
+    println!("cargo:rustc-link-search=native={}", dest.as_path().join("lib").display());
+    // On some 64bit Linux distributions the library directory is `lib64` instead of `lib`
+    #[cfg(target_os = "linux")]
+    println!("cargo:rustc-link-search=native={}", dest.as_path().join("lib64").display());
 }
 
 fn build() {
@@ -273,9 +275,12 @@ fn build() {
     }
 
     println!("cargo:rustc-link-lib=static=nng");
-    let mut dest = config.build();
-    dest.push("lib");
-    println!("cargo:rustc-link-search=native={}", dest.display());
+    let dest = config.build();
+
+    println!("cargo:rustc-link-search=native={}", dest.as_path().join("lib").display());
+    // On some 64bit Linux distributions the library directory is `lib64` instead of `lib`
+    #[cfg(target_os = "linux")]
+    println!("cargo:rustc-link-search=native={}", dest.as_path().join("lib64").display());
 }
 
 fn main() {
