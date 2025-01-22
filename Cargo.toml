@@ -1,6 +1,6 @@
 [package]
 name = "nng-c-sys"
-version = "1.9.0-beta.2"
+version = "1.10.0"
 authors = ["Douman <douman@gmx.se>"]
 edition = "2018"
 keywords = ["nng", "nanomsg"]
@@ -11,7 +11,7 @@ repository = "https://github.com/DoumanAsh/nng-c-sys"
 documentation = "https://docs.rs/crate/nng-c-sys"
 
 [build-dependencies.bindgen]
-version = "0.69"
+version = "0.71"
 optional = true
 
 [build-dependencies.cmake]

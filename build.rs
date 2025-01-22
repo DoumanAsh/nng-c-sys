@@ -237,6 +237,7 @@ fn build() {
     //File descriptor is experimental transport so don't use it
     //idk why it is ON by default
     config.define("NNG_TRANSPORT_FDC", "OFF");
+    config.define("NNG_ENABLE_COVERAGE", "OFF");
 
     #[cfg(not(feature = "stats"))]
     config.define("NNG_ENABLE_STATS", "OFF");

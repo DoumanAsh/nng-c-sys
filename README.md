@@ -15,11 +15,11 @@ High level bindings: [nng-c](https://github.com/DoumanAsh/nng-c)
 - `http` - Builds with http code ON
 - `websocket` - Builds with websocket code ON. Enables `http` alongside
 - `tls` - Builds with TLS code ON
-- `stats` - Builds with statistics collection. See [this](https://nng.nanomsg.org/man/v1.8.0/nng_stat.5.html) for details.
+- `stats` - Builds with statistics collection. See [this](https://nng.nanomsg.org/man/v1.10.0/nng_stat.5.html) for details.
 
 ### TLS
 
-When `tls` feature is enabled this crate compiles mbedtls 2.28.8 to bundle it together with `nng`
+When `tls` feature is enabled this crate compiles mbedtls 2.28.9 to bundle it together with `nng`
 
 ## Cross compilation
 
