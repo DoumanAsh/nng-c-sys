@@ -9,5 +9,5 @@ fn should_verify_version() {
         )
     };
     let version = version.to_str().expect("utf-8");
-    assert_eq!(version, "1.10.0");
+    assert_eq!(version, "1.11.0");
 }
