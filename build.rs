@@ -196,6 +196,8 @@ fn build_mbedtls(nng: &mut cmake::Config, is_ninja: bool) {
 
     nng.define("MBEDTLS_ROOT_DIR", &dest);
 
+    #[cfg(windows)]
+    println!("cargo:rustc-link-lib=dylib=Bcrypt");
     println!("cargo:rustc-link-lib=static=mbedcrypto");
     println!("cargo:rustc-link-lib=static=mbedtls");
     println!("cargo:rustc-link-lib=static=mbedx509");
@@ -278,6 +280,8 @@ fn build() {
     println!("cargo:rustc-link-lib=static=nng");
     let dest = config.build();
 
+    #[cfg(windows)]
+    println!("cargo:rustc-link-lib=dylib=Advapi32");
     println!("cargo:rustc-link-search=native={}", dest.as_path().join("lib").display());
     // On some 64bit Linux distributions the library directory is `lib64` instead of `lib`
     #[cfg(target_os = "linux")]
