@@ -19,7 +19,7 @@ High level bindings: [nng-c](https://github.com/DoumanAsh/nng-c)
 
 ### TLS
 
-When `tls` feature is enabled this crate compiles mbedtls 2.28.9 to bundle it together with `nng`
+When `tls` feature is enabled this crate compiles mbedtls 2.28.10 to bundle it together with `nng`
 
 ## Cross compilation
 
