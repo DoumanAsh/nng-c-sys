@@ -21,7 +21,8 @@ High level bindings: [nng-c](https://github.com/DoumanAsh/nng-c)
 
 ### TLS
 
-When `tls` feature is enabled this crate compiles mbedtls 2.28.10 to bundle it together with `nng`
+When `tls` feature is enabled this crate compiles vendored mbedtls to bundle it together with `nng`
+To avoid that consider using alternative `tls-*` features to let cmake discover installed mbedtls
 
 ## Cross compilation
 
