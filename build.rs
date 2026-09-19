@@ -197,11 +197,6 @@ fn build_mbedtls(nng: &mut cmake::Config, is_ninja: bool) {
 
     nng.define("MBEDTLS_ROOT_DIR", &dest);
 
-    #[cfg(windows)]
-    println!("cargo:rustc-link-lib=dylib=Bcrypt");
-    println!("cargo:rustc-link-lib=static=mbedcrypto");
-    println!("cargo:rustc-link-lib=static=mbedtls");
-    println!("cargo:rustc-link-lib=static=mbedx509");
     println!("cargo:rustc-link-search=native={}", dest.as_path().join("lib").display());
     // On some 64bit Linux distributions the library directory is `lib64` instead of `lib`
     #[cfg(target_os = "linux")]
@@ -272,7 +267,24 @@ fn build() {
     }
     #[cfg(feature = "tls")]
     {
-        build_mbedtls(&mut config, is_ninja);
+        let lib_prefix = if cfg!(feature = "tls-no-vendored") {
+            #[cfg(all(unix, feature = "tls-pkg-config"))] {
+                let result = pkg_config::probe_library("mbedtls").unwrap();
+                for link_path in result.link_paths {
+                    println!("cargo:rustc-link-search=native={}", link_path.display());
+                }
+            }
+            "dylib"
+        } else {
+            build_mbedtls(&mut config, is_ninja);
+            "static"
+        };
+
+        #[cfg(windows)]
+        println!("cargo:rustc-link-lib=dylib=Bcrypt");
+        println!("cargo:rustc-link-lib={lib_prefix}=mbedcrypto");
+        println!("cargo:rustc-link-lib={lib_prefix}=mbedtls");
+        println!("cargo:rustc-link-lib={lib_prefix}=mbedx509");
 
         config.define("NNG_TRANSPORT_TLS", "ON");
         config.define("NNG_ENABLE_TLS", "ON");

@@ -10,6 +10,10 @@ license = "BSL-1.0"
 repository = "https://github.com/DoumanAsh/nng-c-sys"
 documentation = "https://docs.rs/crate/nng-c-sys"
 
+[build-dependencies.pkg-config]
+version = "0.3"
+optional = true
+
 [build-dependencies.bindgen]
 version = "0.73"
 optional = true
@@ -26,5 +30,9 @@ http = []
 websocket = ["http"]
 # Enables TLS
 tls = []
+# Enables TLS but rely on automatic CMake discovery
+tls-no-vendored = ["tls"]
+# Enables TLS but rely on pkg-config to discover it
+tls-pkg-config = ["tls-no-vendored", "pkg-config"]
 # Enables statistics
 stats = []

@@ -14,7 +14,9 @@ High level bindings: [nng-c](https://github.com/DoumanAsh/nng-c)
 
 - `http` - Builds with http code ON
 - `websocket` - Builds with websocket code ON. Enables `http` alongside
-- `tls` - Builds with TLS code ON
+- `tls` - Builds with TLS using vendored [mbedtls](./mbedtls-3.6.7)
+- `tls-no-vendored` - Builds with TLS, but assume `mbedtls` is available as dynamic library in default paths (e.g. `/usr/lib64`)
+- `tls-pkg-config` - Builds with TLS, but use `pkg-config` to discover `mbedtls`
 - `stats` - Builds with statistics collection. See [this](https://nng.nanomsg.org/man/v1.10.0/nng_stat.5.html) for details.
 
 ### TLS
