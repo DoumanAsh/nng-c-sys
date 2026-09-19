@@ -22,7 +22,7 @@ fn should_verify_http_feature_enabled() {
     let mut req = ptr::null_mut();
     let result = unsafe { nng_http_req_alloc(&mut req, ptr::null()) };
     #[cfg(not(feature = "http"))]
-    assert_eq!(result, nng_c_sys::nng_errno_enum::NNG_ENOTSUP);
+    assert_eq!(result, nng_c_sys::nng_errno_enum::NNG_ENOTSUP as _);
     #[cfg(feature = "http")]
     {
         assert_eq!(result, 0);

@@ -9,6 +9,8 @@
 //
 
 #include "core/nng_impl.h"
+
+#include <limits.h>
 #include <string.h>
 
 struct nni_aio_expire_q {
@@ -201,8 +203,6 @@ nni_aio_stop(nni_aio *aio)
 
 		if (fn != NULL) {
 			fn(aio, arg, NNG_ECANCELED);
-		} else {
-			nni_task_abort(&aio->a_task);
 		}
 
 		nni_aio_wait(aio);
@@ -228,8 +228,6 @@ nni_aio_close(nni_aio *aio)
 
 		if (fn != NULL) {
 			fn(aio, arg, NNG_ECLOSED);
-		} else {
-			nni_task_abort(&aio->a_task);
 		}
 	}
 }
@@ -347,6 +345,7 @@ nni_aio_begin(nni_aio *aio)
 	aio->a_result    = 0;
 	aio->a_count     = 0;
 	aio->a_cancel_fn = NULL;
+	aio->a_abort     = false;
 
 	// We should not reschedule anything at this point.
 	if (aio->a_stop) {
@@ -373,7 +372,6 @@ nni_aio_schedule(nni_aio *aio, nni_aio_cancel_fn cancel, void *data)
 		// Convert the relative timeout to an absolute timeout.
 		switch (aio->a_timeout) {
 		case NNG_DURATION_ZERO:
-			nni_task_abort(&aio->a_task);
 			return (NNG_ETIMEDOUT);
 		case NNG_DURATION_INFINITE:
 		case NNG_DURATION_DEFAULT:
@@ -386,8 +384,13 @@ nni_aio_schedule(nni_aio *aio, nni_aio_cancel_fn cancel, void *data)
 	}
 
 	nni_mtx_lock(&eq->eq_mtx);
+	if (aio->a_abort) {
+		int rv = aio->a_result;
+		nni_mtx_unlock(&eq->eq_mtx);
+		return (rv);
+	}
+
 	if (aio->a_stop) {
-		nni_task_abort(&aio->a_task);
 		nni_mtx_unlock(&eq->eq_mtx);
 		return (NNG_ECLOSED);
 	}
@@ -420,13 +423,17 @@ nni_aio_abort(nni_aio *aio, int rv)
 	arg               = aio->a_cancel_arg;
 	aio->a_cancel_fn  = NULL;
 	aio->a_cancel_arg = NULL;
+	if (fn == NULL) {
+		// We haven't been scheduled yet,
+		// so make sure that the schedule will abort.
+		aio->a_abort  = true;
+		aio->a_result = rv;
+	}
 	nni_mtx_unlock(&eq->eq_mtx);
 
 	// Stop any I/O at the provider level.
 	if (fn != NULL) {
 		fn(aio, arg, rv);
-	} else {
-		nni_task_abort(&aio->a_task);
 	}
 }
 
@@ -702,6 +709,19 @@ nni_aio_iov_count(nni_aio *aio)
 		residual += aio->a_iov[i].iov_len;
 	}
 	return (residual);
+}
+
+bool
+nni_aio_iov_clamp_len(size_t *len, size_t *count)
+{
+	NNI_ASSERT(*count <= (size_t) INT_MAX);
+	size_t headroom = (size_t) INT_MAX - *count;
+	bool   clamped  = *len > headroom;
+	if (clamped) {
+		*len = headroom;
+	}
+	*count += *len;
+	return clamped;
 }
 
 size_t

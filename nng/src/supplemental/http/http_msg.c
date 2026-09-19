@@ -617,10 +617,25 @@ nni_http_req_alloc(nni_http_req **reqp, const nni_url *url)
 	req->uri       = NULL;
 	if (url != NULL) {
 		const char *host;
+		const char *uri = url->u_requri;
 		int         rv;
-		if ((req->uri = nni_strdup(url->u_requri)) == NULL) {
+
+		// An origin-form request-target must contain an absolute path.  A
+		// URL may have an empty path, however, so supply the required root
+		// path while preserving a query-only URI.
+		if (uri[0] == '\0') {
+			uri = "/";
+		}
+		if (uri[0] == '?') {
+			rv = nni_asprintf(&req->uri, "/%s", uri);
+		} else if ((req->uri = nni_strdup(uri)) != NULL) {
+			rv = 0;
+		} else {
+			rv = NNG_ENOMEM;
+		}
+		if (rv != 0) {
 			NNI_FREE_STRUCT(req);
-			return (NNG_ENOMEM);
+			return (rv);
 		}
 
 		// Add a Host: header since we know that from the URL. Also,
@@ -770,6 +785,7 @@ http_req_parse_line(nni_http_req *req, void *line)
 	char *method;
 	char *uri;
 	char *version;
+	char *canon_uri;
 
 	method = line;
 	if ((uri = strchr(method, ' ')) == NULL) {
@@ -784,11 +800,27 @@ http_req_parse_line(nni_http_req *req, void *line)
 	*version = '\0';
 	version++;
 
-	if (((rv = nni_http_req_set_method(req, method)) != 0) ||
-	    ((rv = nni_http_req_set_uri(req, uri)) != 0) ||
-	    ((rv = nni_http_req_set_version(req, version)) != 0)) {
+	// This server supports origin-form request targets only.  Reject targets
+	// that do not start with '/' before canonicalization: in particular, a
+	// leading '?' must not be treated as a root path by routing and then be
+	// mistaken for its separator by a directory handler.  Fragments are only
+	// meaningful in URI references, and a backslash can become a directory
+	// separator on Windows.
+	if ((uri[0] != '/') || (strchr(uri, '#') != NULL) ||
+	    (strchr(uri, '\\') != NULL)) {
+		return (NNG_EPROTO);
+	}
+
+	if ((rv = nni_url_canonify_uri(&canon_uri, uri)) != 0) {
 		return (rv);
 	}
+	if (((rv = nni_http_req_set_method(req, method)) != 0) ||
+	    ((rv = nni_http_req_set_uri(req, canon_uri)) != 0) ||
+	    ((rv = nni_http_req_set_version(req, version)) != 0)) {
+		nni_strfree(canon_uri);
+		return (rv);
+	}
+	nni_strfree(canon_uri);
 	req->parsed = true;
 	return (0);
 }

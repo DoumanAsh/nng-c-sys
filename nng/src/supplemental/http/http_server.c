@@ -1350,20 +1350,27 @@ static struct content_map {
 	{ ".jpeg", "image/jpeg" },
 	{ ".jpg", "image/jpeg" },
 	{ ".js", "application/javascript" },
+	{ ".json", "application/json" },
 	{ ".md", "text/markdown" },
 	{ ".mp2", "video/mpeg" },
 	{ ".mp3", "audio/mpeg3" },
+	{ ".mp4", "video/mp4" },
 	{ ".mpeg", "video/mpeg" },
 	{ ".mpg", "video/mpeg" },
 	{ ".pdf", "application/pdf" },
 	{ ".png", "image/png" },
 	{ ".ps", "application/postscript" },
 	{ ".rtf", "text/rtf" },
+	{ ".svg", "image/svg+xml" },
 	{ ".text", "text/plain" },
 	{ ".tif", "image/tiff" },
 	{ ".tiff", "image/tiff" },
 	{ ".txt", "text/plain" },
-	{ ".wav", "audio/wav"},
+	{ ".wasm", "application/wasm" },
+	{ ".wav", "audio/wav" },
+	{ ".webp", "image/webp" },
+	{ ".woff", "font/woff" },
+	{ ".woff2", "font/woff2" },
 	{ "README", "text/plain" },
 	{ NULL, NULL },
 	// clang-format on
@@ -1537,6 +1544,22 @@ http_handle_dir(nni_aio *aio)
 	        ((uri[len] != 0) && (uri[len] != '/')))) {
 		// This should never happen!
 		nni_aio_finish_error(aio, NNG_EINVAL);
+		return;
+	}
+
+	// The request parser rejects these characters, but check again before
+	// building a filesystem path in case a request reaches this handler by
+	// another route.  A fragment is not part of an HTTP request-target, and a
+	// backslash is a directory separator on Windows.
+	if ((strchr(uri + len, '#') != NULL) ||
+	    (strchr(uri + len, '\\') != NULL)) {
+		if ((rv = nni_http_res_alloc_error(
+		         &res, NNG_HTTP_STATUS_BAD_REQUEST)) != 0) {
+			nni_aio_finish_error(aio, rv);
+			return;
+		}
+		nni_aio_set_output(aio, 0, res);
+		nni_aio_finish(aio, 0, 0);
 		return;
 	}
 
