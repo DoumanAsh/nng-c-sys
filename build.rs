@@ -174,7 +174,7 @@ fn set_cmake_define_if_present(config: &mut cmake::Config, name: &str) {
 
 #[cfg(feature = "tls")]
 fn build_mbedtls(nng: &mut cmake::Config, is_ninja: bool) {
-    const MBEDTLS: &str = "mbedtls-3.6.4";
+    const MBEDTLS: &str = "mbedtls-3.6.7";
     let mut config = cmake::Config::new(MBEDTLS);
 
     if let Some((toolchain_file, abi)) = get_android_vars() {
