@@ -26,3 +26,11 @@ When `tls` feature is enabled this crate compiles mbedtls 2.28.10 to bundle it t
 ### Android
 
 Specify environment variable `ANDROID_NDK_HOME` which points too root of NDK installation where to look for toolchain file
+
+
+## C code update
+
+1. Download new version extracting only `cmake/`, `include/`, `src/`, `CMakeLists.txt` and `LICENSE.txt`
+2. Apply [nng.patch](./nng.patch) to ensure build correctness
+3. Ensure constants `NNG_OPT_*` end with `\0` character in [lib.rs](./src/lib.rs)
+4. Due to buggy [bindgen](https://github.com/rust-lang/rust-bindgen/issues/2711) it will generate incorrect enum type. While standard doesn't mandate it to be `int`, it is most often than not is most assumed choice for developers, so you need to ensure that all `pub type Type =` definitions within enum modules are defined as `pub type Type = core::ffi::c_int` rather than `c_uint`

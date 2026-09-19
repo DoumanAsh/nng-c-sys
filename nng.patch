@@ -1,0 +1,13 @@
+diff --git a/nng/CMakeLists.txt b/nng/CMakeLists.txt
+index 1dca028..b618382 100644
+--- a/nng/CMakeLists.txt
++++ b/nng/CMakeLists.txt
+@@ -293,7 +293,7 @@ endif ()
+ 
+ #  Build the tools
+ 
+-add_subdirectory(docs/man)
++#add_subdirectory(docs/man)
+ 
+ set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+ set(CPACK_PACKAGE_VERSION ${NNG_PACKAGE_VERSION})

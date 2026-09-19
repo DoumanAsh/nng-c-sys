@@ -122,6 +122,7 @@ pub const NNG_FLAG_NONBLOCK: core::ffi::c_int = 2;
         .size_t_is_usize(true)
         .sort_semantically(true)
         .merge_extern_blocks(true)
+        .derive_copy(true)
         .default_enum_style(bindgen::EnumVariation::ModuleConsts)
         .allowlist_type("nng.+")
         .allowlist_function("nng.+")
